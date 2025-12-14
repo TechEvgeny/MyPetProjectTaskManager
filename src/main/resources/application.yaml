@@ -26,9 +26,21 @@ server:
     context-path: /api
 
 logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
   level:
     root: INFO
     org.springframework.web: DEBUG
-    com.yourname: DEBUG
+    com.evgenjoy: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+  file:
+    name: logs/app.log
+    max-size: 10MB
+    max-history: 7
+
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      total-size-cap: 100MB

@@ -16,9 +16,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     // Найти все неудаленные задачи
     List<Task> findByDeletedFalse();
 
-    // Найти с пагинацией
-    Page<Task> findByDeletedFalse(Pageable pageable);
-
     // Найти по ID и не удалена
     Optional<Task> findByIdAndDeletedFalse(Long id);
 
