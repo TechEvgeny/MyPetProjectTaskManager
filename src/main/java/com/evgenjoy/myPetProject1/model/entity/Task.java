@@ -20,7 +20,7 @@ public class Task {
     @Column(nullable = false, length = 100)
     private String title;
 
-    @Column(name = "description", nullable = false, length = 500)
+    @Column(name = "description", length = 500)
     private String description;
 
     @Column(name = "is_completed")
