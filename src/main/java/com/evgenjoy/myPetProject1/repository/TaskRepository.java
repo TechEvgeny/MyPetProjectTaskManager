@@ -20,20 +20,20 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     Optional<Task> findByIdAndDeletedFalse(Long id);
 
     // Найти завершенные задачи
-    List<Task> findByCompletedTrueAndDeletedFalse();
+//    List<Task> findByCompletedTrueAndDeletedFalse();
 
     // Найти незавершенные задачи
-    List<Task> findByCompletedFalseAndDeletedFalse();
+//    List<Task> findByCompletedFalseAndDeletedFalse();
 
     // Поиск по названию (регистронезависимый)
-    List<Task> findByTitleContainingIgnoreCaseAndDeletedFalse(String keyword);
+//    List<Task> findByTitleContainingIgnoreCaseAndDeletedFalse(String keyword);
 
     // Поиск по приоритету
-    List<Task> findByPriorityAndDeletedFalse(Integer priority);
+//    List<Task> findByPriorityAndDeletedFalse(Integer priority);
 
     // Просроченные задачи (dueDate < сейчас и не завершена)
-    @Query("SELECT t FROM Task t WHERE t.dueDate < :now AND t.completed = false AND t.deleted = false")
-    List<Task> findOverdue();
+//    @Query("SELECT t FROM Task t WHERE t.dueDate < :now AND t.completed = false AND t.deleted = false")
+//    List<Task> findOverdue();
 
 
 }

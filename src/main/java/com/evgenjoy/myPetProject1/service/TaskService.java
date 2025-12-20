@@ -1,14 +1,16 @@
 package com.evgenjoy.myPetProject1.service;
 
 
+import com.evgenjoy.myPetProject1.controller.TaskNotFoundException;
 import com.evgenjoy.myPetProject1.model.dto.TaskRequest;
 import com.evgenjoy.myPetProject1.model.dto.TaskResponse;
 import com.evgenjoy.myPetProject1.model.dto.TaskUpdateRequest;
 import com.evgenjoy.myPetProject1.model.entity.Task;
+import com.evgenjoy.myPetProject1.model.enums.Priority;
+import com.evgenjoy.myPetProject1.model.enums.Status;
 import com.evgenjoy.myPetProject1.repository.TaskRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,9 +39,7 @@ public class TaskService {
         Task task = Task.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
-                .priority(request.getPriority() != null? request.getPriority():3)
                 .dueDate(request.getDueDate())
-                .completed(false)
                 .deleted(false)
                 .build();
         
@@ -86,7 +86,6 @@ public class TaskService {
 
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
-        task.setPriority(request.getPriority() !=null? request.getPriority(): task.getPriority());
         task.setDueDate(request.getDueDate());
 
         Task updateTask = taskRepository.save(task);
@@ -133,16 +132,7 @@ public class TaskService {
         if (request.getDescription() != null) {
             task.setDescription(request.getDescription());
         }
-        if (request.getCompleted() != null) {
-            task.setCompleted(request.getCompleted());
-            log.info("Задача {} помечена {}", id, request.getCompleted() ? "Завершена" : "В ожидании");
-        }
-        if (request.getPriority() != null) {
-            if (request.getPriority() < 1 || request.getPriority() > 3) {
-                throw new RuntimeException("Приоритет должен быть в диапозоне от 1 до 3");
-            }
-            task.setPriority(request.getPriority());
-    }   if (request.getDueDate() != null) {
+        if (request.getDueDate() != null) {
             if (request.getDueDate().isBefore(LocalDateTime.now())) {
                 throw new RuntimeException( "Дата не может быть более ранней чем сегодня");
             }
@@ -155,15 +145,46 @@ public class TaskService {
 
     }
 
+    public Task changeStatus(Long id, int numberStatus, String statusMessage) {
+        Task task = taskRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new TaskNotFoundException("Задача с id: " + id + " не найдена"));
+
+        Status newStatus = Status.fromValue(numberStatus);
+
+        task.setStatus(newStatus);
+        task.setUpdatedAt(LocalDateTime.now());
 
 
+        log.info("Статус задачи [" + task.getTitle() + "] изменён на " + task.getStatus().name());
+        log.info("Сообщение изменения статуса - [ " + statusMessage + " ]");
 
+        return taskRepository.save(task);
+    }
+
+    public Task changePriority(Long id, int numberPriority, String  priorityMessage) {
+        Task task = taskRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new TaskNotFoundException("Задача с " + id + " не найдена"));
+
+        if (task.getStatus() == Status.DONE) {
+            throw new IllegalStateException("Приоритет не может быть изменён для завершенной задачи.");
+        }
+
+        Priority newPriority = Priority.valueOf(numberPriority);
+
+        task.setPriority(newPriority);
+        task.setUpdatedAt(LocalDateTime.now());
+
+        log.info("Приоритет задачи [" + task.getTitle() + "] изменён на " + task.getPriority().name());
+        log.info("Сообщение изменения приоритета - [ " + priorityMessage + " ]");
+
+        return taskRepository.save(task);
+    }
 
     private TaskResponse mapToResponse(Task task) {
         return TaskResponse.builder().id(task.getId())
                 .title(task.getTitle())
                 .description(task.getDescription())
-                .completed(task.isCompleted())
+                .status(task.getStatus())
                 .priority(task.getPriority())
                 .dueDate(task.getDueDate())
                 .createdAt(task.getCreatedAt())

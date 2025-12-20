@@ -1,11 +1,12 @@
 package com.evgenjoy.myPetProject1.controller;
 
-import com.evgenjoy.myPetProject1.model.dto.TaskRequest;
-import com.evgenjoy.myPetProject1.model.dto.TaskResponse;
-import com.evgenjoy.myPetProject1.model.dto.TaskUpdateRequest;
+import com.evgenjoy.myPetProject1.model.dto.*;
+import com.evgenjoy.myPetProject1.model.entity.Task;
 import com.evgenjoy.myPetProject1.service.TaskService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -128,36 +129,44 @@ public class TaskController {
         return ResponseEntity.ok(taskService.patchTask(id, request));
     }
 
-    @PatchMapping("/{id}/complete")
     @Operation(
-            summary = "Помечает задачу выполненной",
-            description = "Устанавливает статус задачи как выполненная (completed = true)",
-            method = "Patch",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Задача помечена как \"выполнена\""),
-                    @ApiResponse(responseCode = "404", description = "Задача не найдена"),
-                    @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
-            })
-    public ResponseEntity<TaskResponse> completeTask(@PathVariable long id) {
-        TaskUpdateRequest taskUpdateRequest = new TaskUpdateRequest();
-        taskUpdateRequest.setCompleted(true);
-        return ResponseEntity.ok(taskService.patchTask(id, taskUpdateRequest));
+            summary = "Изменить статус задачи",
+            description = "Обновляет статус задачи"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Статус обновлен"),
+            @ApiResponse(responseCode = "404", description = "Задача не найдена"),
+            @ApiResponse(responseCode = "400", description = "Недопустимый переход статуса")
+    })
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<TaskResponse> updateStatus(
+            @Parameter(description = "ID задачи", required = true)
+            @PathVariable long id,
+            @Parameter(description = "Новый статус задачи", required = true)
+            @Valid @RequestBody UpdateStatusRequest updateStatusRequest) throws TaskNotFoundException {
+
+        Task task = taskService.changeStatus(id, updateStatusRequest.getNumberStatus(), updateStatusRequest.getMessage());
+        return ResponseEntity.ok(TaskResponse.from(task));
     }
 
-    @PatchMapping("/{id}/uncomplete")
     @Operation(
-            summary = "Помечает задачу не выполненной",
-            description = "Устанавливает статус задачи как невыполненная (completed = false)",
-            method = "Patch",
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Задача помечена как \"невыполнена\""),
-                    @ApiResponse(responseCode = "404", description = "Задача не найдена"),
-                    @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
-            })
-    public ResponseEntity<TaskResponse> uncompleteTask(@PathVariable Long id) {
-        TaskUpdateRequest request = new TaskUpdateRequest();
-        request.setCompleted(false);
-        return ResponseEntity.ok(taskService.patchTask(id, request));
+            summary = "Изменить приоритет задачи",
+            description = "Обновляет приоритет задачи"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Приоритет обновлен"),
+            @ApiResponse(responseCode = "404", description = "Задача не найдена"),
+            @ApiResponse(responseCode = "400", description = "Недопустимый переход приоритета")
+    })
+    @PatchMapping("/{id}/priority")
+    public ResponseEntity<TaskResponse> updatePriority(
+            @Parameter(description = "ID задачи", required = true)
+            @PathVariable long id,
+            @Parameter(description = "Новый приоритет задачи", required = true)
+            @Valid @RequestBody UpdatePriorityRequest updatePriorityRequest) {
+
+        Task task = taskService.changePriority(id, updatePriorityRequest.getNumberPriority(), updatePriorityRequest.getMessage());
+        return ResponseEntity.ok(TaskResponse.from(task));
     }
 
 

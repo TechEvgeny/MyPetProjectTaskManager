@@ -33,8 +33,6 @@ public class TempTestController {
                 .id(1L)
                 .title("Задача 1")
                 .description("Подрорбное описание задачи")
-                .completed(false)
-                .priority(1)
                 .dueDate(LocalDateTime.now().plusDays(1))
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
