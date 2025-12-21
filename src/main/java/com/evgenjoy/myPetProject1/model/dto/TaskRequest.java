@@ -17,5 +17,7 @@ public class TaskRequest {
     @Size(max = 300, message = "Не более 300 букв!")
     private String description;
 
+    private int priority;
+
     private LocalDateTime dueDate;
 }
