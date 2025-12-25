@@ -9,8 +9,11 @@ spring:
     hikari:
       maximum-pool-size: 10
       connection-timeout: 30000
-
+  sql:
+    init:
+      mode: always
   jpa:
+    defer-datasource-initialization: true
     hibernate:
       ddl-auto: create-drop
     show-sql: true
