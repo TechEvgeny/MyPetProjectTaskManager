@@ -1,5 +1,7 @@
 package com.evgenjoy.myPetProject1.model.entity;
 
+import com.evgenjoy.myPetProject1.model.enums.Priority;
+import com.evgenjoy.myPetProject1.model.enums.Status;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,16 +22,16 @@ public class Task {
     @Column(nullable = false, length = 100)
     private String title;
 
-    @Column(name = "description", nullable = false, length = 500)
+    @Column(name = "description", length = 500)
     private String description;
 
-    @Column(name = "is_completed")
+    @Enumerated(EnumType.STRING)
     @Builder.Default
-    private boolean completed = false;
+    private Status status = Status.CREATE;
 
-    @Column(name = "priority")
+    @Enumerated(EnumType.STRING)
     @Builder.Default
-    private Integer priority = 3;
+    private Priority priority = Priority.LOW;
 
     @Column(name = "dueDate")
     private LocalDateTime dueDate;
@@ -60,5 +62,19 @@ public class Task {
 
     }
 
-
+    @Override
+    public String toString() {
+        return "Task{" +
+                "id=" + id +
+                ", title='" + title + '\'' +
+                ", description='" + description + '\'' +
+                ", status=" + status.getText() +
+                ", priority=" + priority.getText() +
+                ", dueDate=" + dueDate +
+                ", deleted=" + deleted +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                ", version=" + version +
+                '}';
+    }
 }
