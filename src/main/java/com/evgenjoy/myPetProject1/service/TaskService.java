@@ -13,6 +13,10 @@ import com.evgenjoy.myPetProject1.repository.mappers.TaskMapper;
 import com.evgenjoy.myPetProject1.repository.mappers.UpdateTaskMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +26,7 @@ import java.util.List;
 @Service
 @Slf4j
 @Transactional
+@CacheConfig(cacheNames = "tasks")
 public class TaskService {
 
     private final TaskRepository taskRepository;
@@ -35,6 +40,13 @@ public class TaskService {
         this.taskMapper = taskMapper;
     }
 
+    /**
+     * Создать задачу - инвалидируем кэш списка
+     * @CacheEvict - удаляет запись из кэша при вызове метода
+     * key = "'all'" - удаляет кэш со списком всех задач
+     * beforeInvocation = true - удалить кэш ДО выполнения метода
+     */
+    @CacheEvict(key = "'all'", beforeInvocation = true)
     public TaskResponse createTask(TaskRequest request) {
 
         log.info("Создание новой задачи " + request.getTitle());
@@ -52,17 +64,19 @@ public class TaskService {
         return taskMapper.toResponse(savedTask);
     }
 
+    @Cacheable(key = "'all'", unless = "#result == null or #result.isEmpty()")
     @Transactional(readOnly = true)
     public List<TaskResponse> getAllTasks() {
-
+        log.info("Получение всех задач из БД (кэш промах)");
         List<Task> tasks = taskRepository.findByDeletedFalse();
 
         return tasks.stream().map(taskMapper::toResponse).toList();
     }
 
+    @Cacheable(key = "#id", unless = "#result == null")
     @Transactional(readOnly = true)
     public TaskResponse getTaskById(Long id) {
-        log.info("Начинаем поиск задачи по id - " + id);
+        log.info("Начинаем поиск задачи по id - " + id + " кэш промах");
         Task task = taskRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> {
                     log.info("Задача с id " + id + " не найдена");
@@ -71,6 +85,14 @@ public class TaskService {
                 return taskMapper.toResponse(task);
     }
 
+    /**
+     * Обновить задачу - обновляем кэш этой задачи
+     * @CachePut - всегда выполняет метод и обновляет кэш
+     * key = "#id" - обновляет кэш для этой задачи
+     * @CacheEvict - инвалидируем кэш списка
+     */
+    @CachePut("#id")
+    @CacheEvict(key = "'all'", beforeInvocation = true)
     public TaskResponse updateTask(Long id, TaskRequest request) {
         log.info("Изменение задачи id - " + id);
 
@@ -91,6 +113,7 @@ public class TaskService {
         return taskMapper.toResponse(updateTask);
     }
 
+    @CacheEvict(key = "{#id, 'all'}", beforeInvocation = true)
     public void deleteTask(Long id) {
         log.info("удаление задачи id - " + id);
 
@@ -119,6 +142,8 @@ public class TaskService {
         log.info("Задача заархевирована id - " + id);
     }
 
+    @CachePut(key = "#id")
+    @CacheEvict(key = "'all'", beforeInvocation = true)
     public TaskResponse patchTask(Long id, TaskUpdateRequest request) {
 
         log.info("Начинаем апдейт таски id - " + id);
@@ -134,6 +159,8 @@ public class TaskService {
 
     }
 
+    @CachePut(key = "#id")
+    @CacheEvict(key = "'all'", beforeInvocation = true)
     public Task changeStatus(Long id, int numberStatus, String statusMessage) {
         Task task = taskRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new TaskNotFoundException("Задача с id: " + id + " не найдена"));
@@ -150,6 +177,8 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
+    @CachePut(key = "#id")
+    @CacheEvict(key = "'all'", beforeInvocation = true)
     public Task changePriority(Long id, int numberPriority, String  priorityMessage) {
         Task task = taskRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new TaskNotFoundException("Задача с " + id + " не найдена"));
@@ -167,6 +196,22 @@ public class TaskService {
         log.info("Сообщение изменения приоритета - [ " + priorityMessage + " ]");
 
         return taskRepository.save(task);
+    }
+
+    /**
+     * Очистить кэш задач (ручное управление)
+     */
+    @CacheEvict(allEntries = true)
+    public void clearAllCache() {
+        log.info("Очистка всего кэша задач");
+    }
+
+    /**
+     * Очистить кэш конкретной задачи
+     */
+    @CacheEvict(key = "#id")
+    public void clearTaskCache(Long id) {
+        log.info("Очистка кэша задачи {}", id);
     }
 
 }
